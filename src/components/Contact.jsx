@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useForm, ValidationError } from '@formspree/react';
-import { FaEnvelope, FaWhatsapp, FaMapMarkerAlt, FaClock, FaCreditCard, FaUniversity, FaGlobe, FaCoins } from 'react-icons/fa';
+import { FaEnvelope, FaWhatsapp, FaMapMarkerAlt, FaClock, FaCreditCard, FaUniversity, FaGlobe } from 'react-icons/fa';
 
 export default function Contact() {
   const [state, handleSubmit] = useForm(import.meta.env.VITE_FORMSPREE_ID || 'YOUR_FORMSPREE_ID');
@@ -309,10 +309,6 @@ export default function Contact() {
             <div className="flex items-center space-x-2 px-5 py-3 rounded-xl bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200">
               <FaCreditCard className="text-blue-500 text-sm" />
               <span>Razorpay (Cards/UPI/Netbanking)</span>
-            </div>
-            <div className="flex items-center space-x-2 px-5 py-3 rounded-xl bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200">
-              <FaCoins className="text-emerald-500 text-sm" />
-              <span>Cryptocurrency (USDT/USDC/BTC/ETH)</span>
             </div>
             <div className="flex items-center space-x-2 px-5 py-3 rounded-xl bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200">
               <FaUniversity className="text-blue-500 text-sm" />

@@ -3,14 +3,12 @@ import { Link } from 'react-scroll';
 import { FaCheck } from 'react-icons/fa';
 import { useCurrency } from '../hooks/useCurrency';
 import { formatPrice } from '../utils/currency';
+import { openRazorpay } from '../utils/razorpay';
 import CurrencySwitcher from './CurrencySwitcher';
-import CheckoutModal from './CheckoutModal';
 
 export default function Pricing() {
-  const { selectedCurrency, setSelectedCurrency, convert, symbol, rates } = useCurrency();
+  const { selectedCurrency, setSelectedCurrency, convert, symbol } = useCurrency();
   const [isAnnual, setIsAnnual] = useState(false);
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState(null);
 
   const plans = [
     {
@@ -59,8 +57,15 @@ export default function Pricing() {
   ];
 
   const handleSubscription = (plan) => {
-    setSelectedPlan(plan);
-    setIsCheckoutOpen(true);
+    // Calculate total charge amount in INR (since Razorpay expects INR)
+    const baseMonthlyPrice = plan.monthlyPriceINR;
+    const finalMonthlyPrice = isAnnual ? baseMonthlyPrice * 0.8 : baseMonthlyPrice;
+    
+    // Total charged amount: 1 month if monthly, 12 months if annual
+    const totalINR = isAnnual ? finalMonthlyPrice * 12 : finalMonthlyPrice;
+    const billingCycle = isAnnual ? 'Annual' : 'Monthly';
+
+    openRazorpay(plan.name, totalINR, billingCycle);
   };
 
   return (
@@ -181,8 +186,8 @@ export default function Pricing() {
         </div>
 
         {/* Payment Options Footer */}
-        <div className="mt-20 text-center border-t border-slate-800 pt-10 max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-2 text-sm text-slate-400">
-          <span>Also accept: <strong>UPI</strong> | <strong>Cryptocurrency (USDT/USDC/BTC/ETH)</strong> | <strong>NEFT/RTGS</strong></span>
+        <div className="mt-20 text-center border-t border-slate-800 pt-10 max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-2 text-sm text-slate-400">
+          <span>Also accept: <strong>UPI</strong> | <strong>NEFT/RTGS</strong> | <strong>International Wire</strong></span>
           <Link
             to="contact"
             smooth={true}
@@ -194,16 +199,6 @@ export default function Pricing() {
           </Link>
         </div>
       </div>
-
-      {selectedPlan && (
-        <CheckoutModal
-          isOpen={isCheckoutOpen}
-          onClose={() => setIsCheckoutOpen(false)}
-          plan={selectedPlan}
-          isAnnual={isAnnual}
-          exchangeRates={rates}
-        />
-      )}
     </section>
   );
 }
