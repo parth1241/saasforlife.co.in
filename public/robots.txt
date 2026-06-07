@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://saasforlife.co.in/sitemap.xml
