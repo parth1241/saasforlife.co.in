@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import AdminDashboard from './pages/AdminDashboard';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Refund from './pages/Refund';
@@ -39,6 +40,26 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
+// Admin-only Route wrapper component
+function AdminRoute({ children }) {
+  const { isAuthenticated, user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0F172A] flex items-center justify-center text-white">
+        <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // Strict check: must be logged in as parthdhimman@gmail.com with admin role
+  if (!isAuthenticated || !user || user.role !== 'admin' || user.email.toLowerCase() !== 'parthdhimman@gmail.com') {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}
+
 export default function App() {
   return (
     <HelmetProvider>
@@ -60,6 +81,14 @@ export default function App() {
                 <ProtectedRoute>
                   <Dashboard />
                 </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <AdminRoute>
+                  <AdminDashboard />
+                </AdminRoute>
               }
             />
           </Routes>

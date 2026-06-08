@@ -11,15 +11,64 @@ export default function Register() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { register, isAuthenticated } = useAuth();
+  const { register, loginWithGoogle, user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  // If already authenticated, redirect to dashboard immediately
+  // If already authenticated, redirect to correct dashboard immediately
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/dashboard');
+    if (isAuthenticated && user) {
+      if (user.role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, user, navigate]);
+
+  useEffect(() => {
+    const initializeGoogleSignIn = () => {
+      if (window.google) {
+        window.google.accounts.id.initialize({
+          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || '1008719970978-gp0fgnj4g68hrcob9512r7sl31sg99re.apps.googleusercontent.com',
+          callback: handleGoogleResponse,
+        });
+        window.google.accounts.id.renderButton(
+          document.getElementById('google-register-btn'),
+          { 
+            theme: 'outline', 
+            size: 'large', 
+            width: '100%', 
+            text: 'signup_with',
+            shape: 'pill'
+          }
+        );
+      }
+    };
+
+    // Load instantly if library script already fetched
+    if (window.google) {
+      initializeGoogleSignIn();
+    } else {
+      const interval = setInterval(() => {
+        if (window.google) {
+          initializeGoogleSignIn();
+          clearInterval(interval);
+        }
+      }, 100);
+      return () => clearInterval(interval);
+    }
+  }, []);
+
+  const handleGoogleResponse = async (response) => {
+    setError('');
+    setLoading(true);
+    const result = await loginWithGoogle(response.credential);
+    setLoading(false);
+
+    if (!result.success) {
+      setError(result.message || 'Google Sign-In failed.');
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -44,9 +93,7 @@ export default function Register() {
     const result = await register(name, email, password);
     setLoading(false);
 
-    if (result.success) {
-      navigate('/dashboard');
-    } else {
+    if (!result.success) {
       setError(result.message);
     }
   };
@@ -77,6 +124,17 @@ export default function Register() {
               <span>{error}</span>
             </div>
           )}
+
+          {/* Google Sign-In/Sign-Up Button */}
+          <div className="mb-5">
+            <div id="google-register-btn" className="w-full flex justify-center"></div>
+          </div>
+
+          <div className="relative flex py-2 items-center mb-5">
+            <div className="flex-grow border-t border-slate-800"></div>
+            <span className="flex-shrink mx-4 text-slate-500 text-xxs font-semibold uppercase tracking-widest">or register with email</span>
+            <div className="flex-grow border-t border-slate-800"></div>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Full Name */}

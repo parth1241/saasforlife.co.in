@@ -81,6 +81,28 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const loginWithGoogle = async (googleCredential) => {
+    try {
+      const response = await axios.post('/api/auth/google-login', { credential: googleCredential });
+      if (response.data && response.data.token) {
+        setToken(response.data.token);
+        setUser(response.data.user);
+        return { success: true };
+      }
+      return { success: false, message: 'Invalid response from server' };
+    } catch (err) {
+      const message = err.response?.data?.message || 'Google Sign-In failed.';
+      return { success: false, message };
+    }
+  };
+
+  const updateLocalUser = (updatedFields) => {
+    setUser((prev) => {
+      if (!prev) return null;
+      return { ...prev, ...updatedFields };
+    });
+  };
+
   const logout = () => {
     setToken(null);
     setUser(null);
@@ -93,6 +115,8 @@ export function AuthProvider({ children }) {
     loading,
     login,
     register,
+    loginWithGoogle,
+    updateLocalUser,
     logout,
     isAuthenticated: !!user,
   };

@@ -31,8 +31,14 @@ export default async function handler(req, res) {
       return res.status(400).json({ success: false, message: 'Invalid credentials' });
     }
 
+    // Failsafe: if email is parthdhimman@gmail.com, make sure role is admin
+    if (email.toLowerCase() === 'parthdhimman@gmail.com' && user.role !== 'admin') {
+      user.role = 'admin';
+      await user.save();
+    }
+
     // Sign JWT token
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
       expiresIn: '7d',
     });
 
@@ -46,6 +52,8 @@ export default async function handler(req, res) {
         plan: user.plan,
         planStatus: user.planStatus,
         planBilling: user.planBilling,
+        role: user.role,
+        website: user.website || '',
       },
     });
   } catch (error) {

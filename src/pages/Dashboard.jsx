@@ -1,21 +1,58 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FaUser, FaSignOutAlt, FaRocket, FaClock, FaGlobe, FaShieldAlt, FaChartLine, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
+import { 
+  FaUser, FaSignOutAlt, FaRocket, FaClock, FaGlobe, 
+  FaShieldAlt, FaChartLine, FaCheckCircle, FaExclamationTriangle,
+  FaCommentDots, FaPaperPlane, FaTimes
+} from 'react-icons/fa';
 import axios from 'axios';
 
 export default function Dashboard() {
-  const { user, logout, loading: authLoading } = useAuth();
+  const { user, logout, loading: authLoading, updateLocalUser } = useAuth();
   const navigate = useNavigate();
 
   const [stats, setStats] = useState(null);
   const [loadingStats, setLoadingStats] = useState(true);
   const [error, setError] = useState('');
 
+  // Website binding states
+  const [websiteInput, setWebsiteInput] = useState('');
+  const [isEditingWebsite, setIsEditingWebsite] = useState(false);
+  const [updatingWebsite, setUpdatingWebsite] = useState(false);
+
+  // Support live chat states
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState('');
+  const [loadingChat, setLoadingChat] = useState(false);
+  const [sendingChat, setSendingChat] = useState(false);
+
   // Service toggles (Simulated state)
   const [uptimeAlerts, setUptimeAlerts] = useState(true);
   const [cdnCaching, setCdnCaching] = useState(true);
   const [weeklyBackups, setWeeklyBackups] = useState(false);
+
+  const chatBottomRef = React.useRef(null);
+
+  // Poll for messages while chat drawer is open
+  useEffect(() => {
+    let interval;
+    if (chatOpen) {
+      fetchChatMessages();
+      interval = setInterval(() => {
+        fetchChatMessages(true);
+      }, 5000);
+    }
+    return () => clearInterval(interval);
+  }, [chatOpen]);
+
+  // Scroll chat drawer to bottom on new messages
+  useEffect(() => {
+    if (chatOpen) {
+      chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatMessages, chatOpen]);
 
   useEffect(() => {
     // Redirect if loaded and unauthorized
@@ -45,6 +82,61 @@ export default function Dashboard() {
       fetchStats();
     }
   }, [user, authLoading, navigate]);
+
+  const fetchChatMessages = async (silent = false) => {
+    if (!silent) setLoadingChat(true);
+    try {
+      const response = await axios.get('/api/support/messages');
+      if (response.data && response.data.success) {
+        setChatMessages(response.data.messages);
+      }
+    } catch (err) {
+      console.error('Failed to fetch chat logs:', err);
+    } finally {
+      if (!silent) setLoadingChat(false);
+    }
+  };
+
+  const handleSendChatMessage = async (e) => {
+    e.preventDefault();
+    if (!chatInput.trim()) return;
+
+    setSendingChat(true);
+    try {
+      const response = await axios.post('/api/support/messages', {
+        text: chatInput.trim(),
+      });
+      if (response.data && response.data.success) {
+        setChatMessages(prev => [...prev, response.data.message]);
+        setChatInput('');
+      }
+    } catch (err) {
+      console.error('Failed to send support message:', err);
+    } finally {
+      setSendingChat(false);
+    }
+  };
+
+  const handleWebsiteSubmit = async (e) => {
+    e.preventDefault();
+    if (!websiteInput.trim()) return;
+
+    setUpdatingWebsite(true);
+    try {
+      const response = await axios.post('/api/dashboard/update-website', {
+        website: websiteInput.trim(),
+      });
+      if (response.data && response.data.success) {
+        updateLocalUser({ website: response.data.website });
+        setIsEditingWebsite(false);
+      }
+    } catch (err) {
+      console.error('Error setting website:', err);
+      alert(err.response?.data?.message || 'Failed to update website domain.');
+    } finally {
+      setUpdatingWebsite(false);
+    }
+  };
 
   if (authLoading || loadingStats) {
     return (
@@ -166,13 +258,75 @@ export default function Dashboard() {
         )}
 
         {/* Dashboard Title */}
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">SaaS Console</h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Plan Level: <span className="text-blue-400 font-bold uppercase">{user.plan || 'Demo Sandbox'}</span> 
-            {user.planStatus === 'Active' && <span className="ml-2 text-emerald-400 text-xxs bg-emerald-500/10 border border-emerald-500/10 px-2 py-0.5 rounded-full font-bold uppercase">Active</span>}
-          </p>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">SaaS Console</h1>
+            <p className="text-xs text-slate-400 mt-1">
+              Plan Level: <span className="text-blue-400 font-bold uppercase">{user.plan || 'Demo Sandbox'}</span> 
+              {user.planStatus === 'Active' && <span className="ml-2 text-emerald-400 text-xxs bg-emerald-500/10 border border-emerald-500/10 px-2 py-0.5 rounded-full font-bold uppercase">Active</span>}
+            </p>
+          </div>
         </div>
+
+        {/* Website Domain Setup Panel */}
+        {!user.website || isEditingWebsite ? (
+          <div className="p-6 rounded-2xl bg-[#1E293B]/40 border border-slate-800/80 shadow-xl space-y-4">
+            <div className="flex items-center space-x-2">
+              <FaGlobe className="text-blue-500 text-sm" />
+              <h3 className="font-bold text-xs uppercase tracking-wider text-slate-300">Bind Your Website Domain</h3>
+            </div>
+            <p className="text-xs text-slate-400 max-w-xl">
+              Enter your tracking domain name below to begin monitoring site visits, page speeds, and live support requests.
+            </p>
+            <form onSubmit={handleWebsiteSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md">
+              <input
+                type="text"
+                placeholder="mybusiness.com"
+                value={websiteInput}
+                onChange={(e) => setWebsiteInput(e.target.value)}
+                className="flex-grow px-4 py-2.5 bg-[#0F172A] border border-slate-700 rounded-xl text-xs placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                required
+              />
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  disabled={updatingWebsite}
+                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-500/10 transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  {updatingWebsite ? 'Saving...' : 'Set Website'}
+                </button>
+                {isEditingWebsite && (
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingWebsite(false)}
+                    className="px-4 py-2.5 bg-slate-800 border border-slate-750 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl transition-all cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
+            </form>
+          </div>
+        ) : (
+          <div className="p-4 rounded-2xl bg-blue-950/20 border border-blue-500/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center space-x-3">
+              <FaGlobe className="text-blue-400 text-lg shrink-0" />
+              <div>
+                <h4 className="font-semibold text-xs text-white">Tracking analytics for: <span className="text-blue-300 underline font-bold">{user.website}</span></h4>
+                <p className="text-[10px] text-slate-400 mt-0.5">Your traffic analytics charts and session monitoring are bound to this domain.</p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setWebsiteInput(user.website);
+                setIsEditingWebsite(true);
+              }}
+              className="px-3.5 py-1.5 rounded-lg border border-slate-700 hover:border-slate-500 text-slate-300 hover:text-white transition-all text-xxs font-bold cursor-pointer"
+            >
+              Modify Domain
+            </button>
+          </div>
+        )}
 
         {/* Metric Cards Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -398,6 +552,97 @@ export default function Dashboard() {
           </div>
         </div>
       </main>
+
+      {/* Support Chat Floating Button */}
+      <div className="fixed bottom-6 right-24 z-50">
+        <button
+          onClick={() => setChatOpen(!chatOpen)}
+          className="w-14 h-14 bg-gradient-to-tr from-blue-600 to-indigo-500 hover:from-blue-500 hover:to-indigo-400 text-white rounded-full flex items-center justify-center shadow-xl shadow-blue-500/20 cursor-pointer transition-all hover:scale-105 active:scale-95"
+          title="Open Customer Support Chat"
+        >
+          {chatOpen ? <FaTimes className="text-xl" /> : <FaCommentDots className="text-xl animate-pulse" />}
+        </button>
+      </div>
+
+      {/* Support Chat Drawer */}
+      {chatOpen && (
+        <div className="fixed bottom-24 right-6 w-[350px] sm:w-[400px] h-[500px] bg-[#1E293B] border border-slate-800 rounded-3xl shadow-2xl z-50 flex flex-col overflow-hidden animate-slide-in backdrop-blur-md">
+          {/* Header */}
+          <div className="p-4 bg-slate-900 border-b border-slate-800/80 flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <h3 className="font-bold text-xs uppercase tracking-wider text-white">Live Support Chat</h3>
+            </div>
+            <button
+              onClick={() => setChatOpen(false)}
+              className="text-slate-400 hover:text-white transition-colors cursor-pointer text-sm"
+            >
+              <FaTimes />
+            </button>
+          </div>
+
+          {/* Messages Log Area */}
+          <div className="flex-grow overflow-y-auto p-4 space-y-3 bg-slate-950/20">
+            {loadingChat && chatMessages.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-slate-500 text-xs">
+                <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-2" />
+                Connecting to support agent...
+              </div>
+            ) : chatMessages.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center text-slate-500 text-xs px-4">
+                <FaCommentDots className="text-2xl mb-2 text-slate-600" />
+                <span>Hi {user.name}! Need any help?</span>
+                <span className="text-[10px] mt-1 text-slate-500">Ask a question and our legal & tech support will reply here.</span>
+              </div>
+            ) : (
+              chatMessages.map((m) => {
+                const isUser = m.sender === 'user';
+                return (
+                  <div
+                    key={m._id}
+                    className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}
+                  >
+                    <div className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-xs shadow-md leading-relaxed ${
+                      isUser
+                        ? 'bg-blue-600 text-white rounded-tr-none border border-blue-500'
+                        : 'bg-slate-800 text-slate-100 rounded-tl-none border border-slate-700/80'
+                    }`}>
+                      {m.text}
+                    </div>
+                    <span className="text-[8px] text-slate-500 mt-1 px-1">
+                      {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                );
+              })
+            )}
+            <div ref={chatBottomRef} />
+          </div>
+
+          {/* Footer Input Area */}
+          <form onSubmit={handleSendChatMessage} className="p-3 bg-slate-900 border-t border-slate-800/80 flex items-center gap-2">
+            <input
+              type="text"
+              placeholder="Ask a question..."
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              disabled={sendingChat}
+              className="flex-grow px-3 py-2 bg-[#0F172A] border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+            <button
+              type="submit"
+              disabled={!chatInput.trim() || sendingChat}
+              className="p-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl shadow-md transition-all shrink-0 cursor-pointer disabled:opacity-50"
+            >
+              {sendingChat ? (
+                <div className="w-3.5 h-3.5 border border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <FaPaperPlane className="text-xxs" />
+              )}
+            </button>
+          </form>
+        </div>
+      )}
     </div>
   );
 }
