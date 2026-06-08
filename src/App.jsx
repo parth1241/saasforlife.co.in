@@ -5,6 +5,11 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
+import Refund from './pages/Refund';
+import About from './pages/About';
+import ContactPage from './pages/ContactPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 // Scroll to top handler for Route transitions
@@ -44,6 +49,11 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/refund" element={<Refund />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact-us" element={<ContactPage />} />
             <Route
               path="/dashboard"
               element={

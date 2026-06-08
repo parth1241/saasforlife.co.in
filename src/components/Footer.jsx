@@ -1,5 +1,6 @@
 import React from 'react';
 import { FaTwitter, FaLinkedin, FaInstagram, FaGithub, FaEnvelope, FaWhatsapp, FaMapMarkerAlt } from 'react-icons/fa';
+import { Link } from 'react-router-dom';
 
 export default function Footer() {
   return (
@@ -34,20 +35,21 @@ export default function Footer() {
           <div>
             <h4 className="text-white font-bold text-xs uppercase tracking-wider mb-4">Product</h4>
             <ul className="space-y-2.5 text-sm">
-              <li><a href="#features" className="hover:text-white transition-colors">Features</a></li>
-              <li><a href="#pricing" className="hover:text-white transition-colors">Pricing Plans</a></li>
-              <li><a href="#testimonials" className="hover:text-white transition-colors">Testimonials</a></li>
-              <li><a href="#contact" className="hover:text-white transition-colors">Contact</a></li>
+              <li><a href="/#features" className="hover:text-white transition-colors">Features</a></li>
+              <li><a href="/#pricing" className="hover:text-white transition-colors">Pricing Plans</a></li>
+              <li><a href="/#testimonials" className="hover:text-white transition-colors">Testimonials</a></li>
+              <li><Link to="/contact-us" className="hover:text-white transition-colors">Contact Us</Link></li>
             </ul>
           </div>
 
           {/* Column 3: Legal */}
           <div>
-            <h4 className="text-white font-bold text-xs uppercase tracking-wider mb-4">Legal</h4>
+            <h4 className="text-white font-bold text-xs uppercase tracking-wider mb-4">Legal &amp; Info</h4>
             <ul className="space-y-2.5 text-sm">
-              <li><a href="#privacy" className="hover:text-white transition-colors">Privacy Policy</a></li>
-              <li><a href="#terms" className="hover:text-white transition-colors">Terms of Service</a></li>
-              <li><a href="#refund" className="hover:text-white transition-colors">Refund Policy</a></li>
+              <li><Link to="/about" className="hover:text-white transition-colors">About Us</Link></li>
+              <li><Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
+              <li><Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link></li>
+              <li><Link to="/refund" className="hover:text-white transition-colors">Refund Policy</Link></li>
             </ul>
           </div>
 
@@ -77,9 +79,9 @@ export default function Footer() {
         <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center text-xs text-slate-500">
           <p>© 2025 saasforlife.co.in — Made in India 🇮🇳 for the world</p>
           <div className="flex space-x-6 mt-4 md:mt-0">
-            <a href="#privacy" className="hover:text-white transition-colors">Privacy Policy</a>
-            <a href="#terms" className="hover:text-white transition-colors">Terms of Service</a>
-            <a href="#refund" className="hover:text-white transition-colors">Refund Policy</a>
+            <Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
+            <Link to="/terms" className="hover:text-white transition-colors">Terms &amp; Conditions</Link>
+            <Link to="/refund" className="hover:text-white transition-colors">Refund Policy</Link>
           </div>
         </div>
       </div>
