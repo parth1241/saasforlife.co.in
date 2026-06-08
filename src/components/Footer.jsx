@@ -9,9 +9,9 @@ export default function Footer() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-12">
           {/* Column 1: Brand */}
           <div className="space-y-4">
-            <div className="flex items-center space-x-1 font-bold text-xl tracking-tight text-white select-none">
+            <Link to="/" className="inline-flex items-center space-x-1 font-bold text-xl tracking-tight text-white cursor-pointer select-none">
               saasforlife.co.in<span className="text-blue-500 text-2xl leading-none">.</span>
-            </div>
+            </Link>
             <p className="text-sm leading-relaxed text-slate-400">
               World-class software solutions engineered in India. Built for speed, compliance, and life.
             </p>
