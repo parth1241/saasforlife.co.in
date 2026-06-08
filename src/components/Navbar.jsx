@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-scroll';
+import { Link as RouterLink } from 'react-router-dom';
 import { FaBars, FaTimes } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../context/AuthContext';
 
 export default function Navbar() {
   const [navOpen, setNavOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -61,7 +64,13 @@ export default function Navbar() {
         </div>
 
         {/* Action Button */}
-        <div className="hidden md:flex items-center">
+        <div className="hidden md:flex items-center space-x-5">
+          <RouterLink
+            to={isAuthenticated ? "/dashboard" : "/login"}
+            className="text-slate-300 hover:text-white font-semibold text-sm transition-colors cursor-pointer"
+          >
+            {isAuthenticated ? 'Console' : 'Login'}
+          </RouterLink>
           <Link
             to="pricing"
             smooth={true}
@@ -109,6 +118,13 @@ export default function Navbar() {
                 </Link>
               ))}
               
+              <RouterLink
+                to={isAuthenticated ? "/dashboard" : "/login"}
+                onClick={() => setNavOpen(false)}
+                className="w-full text-center py-3.5 rounded-full border border-slate-700 text-slate-300 font-semibold hover:text-white hover:border-slate-500 transition-all cursor-pointer text-sm"
+              >
+                {isAuthenticated ? 'Console' : 'Login'}
+              </RouterLink>
               <Link
                 to="pricing"
                 smooth={true}
