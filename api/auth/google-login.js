@@ -1,6 +1,7 @@
 import connectDB from '../utils/db';
 import User from '../models/User';
 import jwt from 'jsonwebtoken';
+import axios from 'axios';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -16,16 +17,14 @@ export default async function handler(req, res) {
   try {
     await connectDB();
 
-    // Verify token with Google's tokeninfo endpoint
-    const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${credential}`);
-    if (!response.ok) {
-      return res.status(400).json({ success: false, message: 'Failed to verify Google token' });
-    }
-
-    const payload = await response.json();
+    // Verify token with Google's tokeninfo endpoint using axios for universal Node compat
+    const response = await axios.get(`https://oauth2.googleapis.com/tokeninfo?id_token=${credential}`);
+    
+    const payload = response.data;
     const { email, name, email_verified } = payload;
 
-    if (!email_verified) {
+    // Google returns email_verified as a boolean or string "true"
+    if (email_verified !== 'true' && email_verified !== true) {
       return res.status(400).json({ success: false, message: 'Google email is not verified' });
     }
 
@@ -75,6 +74,12 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error('Google login error:', error);
-    return res.status(500).json({ success: false, message: 'Internal server error' });
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error', 
+      error: error.message,
+      stack: error.stack,
+      details: error.response?.data || null
+    });
   }
 }
