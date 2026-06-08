@@ -1,6 +1,6 @@
-import Message from '../models/Message';
-import { verifyAuth } from '../utils/auth';
-import connectDB from '../utils/db';
+import Message from '../models/Message.js';
+import { verifyAuth } from '../utils/auth.js';
+import connectDB from '../utils/db.js';
 
 export default async function handler(req, res) {
   try {

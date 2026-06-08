@@ -1,7 +1,7 @@
-import User from '../models/User';
-import Message from '../models/Message';
-import { verifyAdmin } from '../utils/auth';
-import connectDB from '../utils/db';
+import User from '../models/User.js';
+import Message from '../models/Message.js';
+import { verifyAdmin } from '../utils/auth.js';
+import connectDB from '../utils/db.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
