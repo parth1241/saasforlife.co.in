@@ -34,11 +34,21 @@ export default async function handler(req, res) {
       return res.status(400).json({ success: false, message: 'Google signature validation key expired or not found' });
     }
 
-    // Cryptographically verify the signature and audience (aud claim) locally
+    // Cryptographically verify the signature locally
     const payload = jwt.verify(credential, cert, {
       algorithms: ['RS256'],
-      audience: process.env.VITE_GOOGLE_CLIENT_ID,
     });
+
+    // Verify audience (aud) with fallback to your production client ID
+    const expectedClientId = process.env.VITE_GOOGLE_CLIENT_ID || '74464545900-t7127u0jrcj1gcpq8fh5mk56j59nmc0u.apps.googleusercontent.com';
+    if (payload.aud !== expectedClientId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Google Client ID mismatch',
+        expected: expectedClientId,
+        actual: payload.aud
+      });
+    }
 
     const { email, name, email_verified } = payload;
 
