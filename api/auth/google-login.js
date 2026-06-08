@@ -17,10 +17,29 @@ export default async function handler(req, res) {
   try {
     await connectDB();
 
-    // Verify token with Google's tokeninfo endpoint using axios for universal Node compat
-    const response = await axios.get(`https://oauth2.googleapis.com/tokeninfo?id_token=${credential}`);
-    
-    const payload = response.data;
+    // Decode the token header to retrieve the Key ID (kid)
+    const decodedToken = jwt.decode(credential, { complete: true });
+    if (!decodedToken || !decodedToken.header || !decodedToken.header.kid) {
+      return res.status(400).json({ success: false, message: 'Invalid Google token format' });
+    }
+
+    const { kid } = decodedToken.header;
+
+    // Fetch Google's active PEM public certificates
+    const certsResponse = await axios.get('https://www.googleapis.com/oauth2/v1/certs');
+    const certs = certsResponse.data;
+    const cert = certs[kid];
+
+    if (!cert) {
+      return res.status(400).json({ success: false, message: 'Google signature validation key expired or not found' });
+    }
+
+    // Cryptographically verify the signature and audience (aud claim) locally
+    const payload = jwt.verify(credential, cert, {
+      algorithms: ['RS256'],
+      audience: process.env.VITE_GOOGLE_CLIENT_ID,
+    });
+
     const { email, name, email_verified } = payload;
 
     // Google returns email_verified as a boolean or string "true"
