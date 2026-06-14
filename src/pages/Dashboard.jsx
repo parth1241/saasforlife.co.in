@@ -8,6 +8,7 @@ import {
   FaFileInvoiceDollar, FaCog, FaListAlt, FaInfoCircle
 } from 'react-icons/fa';
 import axios from 'axios';
+import { openRazorpay } from '../utils/razorpay';
 
 export default function Dashboard() {
   const { user, logout, loading: authLoading, updateLocalUser } = useAuth();
@@ -82,6 +83,9 @@ export default function Dashboard() {
           if (response.data.stats.leads) {
             setLeads(response.data.stats.leads);
           }
+          if (response.data.user) {
+            updateLocalUser(response.data.user);
+          }
         } else {
           setError('Failed to load dashboard metrics.');
         }
@@ -97,8 +101,44 @@ export default function Dashboard() {
       fetchStats();
       setProfileName(user.name || '');
       setWebsiteAbout(user.websiteAbout || '');
+      if (user.uptimeAlerts !== undefined) setUptimeAlerts(user.uptimeAlerts);
+      if (user.cdnCaching !== undefined) setCdnCaching(user.cdnCaching);
+      if (user.weeklyBackups !== undefined) setWeeklyBackups(user.weeklyBackups);
     }
   }, [user, authLoading, navigate]);
+
+  // Auto-save settings every 5 seconds
+  useEffect(() => {
+    if (!user) return;
+
+    const interval = setInterval(async () => {
+      const nameChanged = profileName !== (user.name || '');
+      const aboutChanged = websiteAbout !== (user.websiteAbout || '');
+      const uptimeChanged = uptimeAlerts !== (user.uptimeAlerts !== false);
+      const cdnChanged = cdnCaching !== (user.cdnCaching !== false);
+      const backupsChanged = weeklyBackups !== (user.weeklyBackups === true);
+
+      if (nameChanged || aboutChanged || uptimeChanged || cdnChanged || backupsChanged) {
+        console.log('Auto-saving settings...');
+        try {
+          const response = await axios.post('/api/dashboard/update-profile', {
+            name: profileName,
+            websiteAbout,
+            uptimeAlerts,
+            cdnCaching,
+            weeklyBackups
+          });
+          if (response.data && response.data.success) {
+            updateLocalUser(response.data.user);
+          }
+        } catch (err) {
+          console.error('Auto-save failed:', err);
+        }
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [user, profileName, websiteAbout, uptimeAlerts, cdnCaching, weeklyBackups, updateLocalUser]);
 
   const fetchChatMessages = async (silent = false) => {
     if (!silent) setLoadingChat(true);
@@ -882,14 +922,22 @@ export default function Dashboard() {
                           <button
                             onClick={async () => {
                               try {
-                                const response = await axios.post('/api/dashboard/upgrade', {
-                                  plan: p.name,
-                                  billingCycle: 'Monthly'
-                                });
-                                if (response.data && response.data.success) {
-                                  updateLocalUser(response.data.user);
-                                  alert(`Success! Upgraded to ${p.name} Plan.`);
-                                  window.location.reload();
+                                const basePriceINR = p.name === 'Starter' ? 1499 : p.name === 'Growth' ? 3999 : 8999;
+                                const result = await openRazorpay(p.name, basePriceINR, 'Monthly');
+                                
+                                if (result && result.success) {
+                                  const response = await axios.post('/api/dashboard/upgrade', {
+                                    plan: p.name,
+                                    billingCycle: 'Monthly',
+                                    razorpayPaymentId: result.paymentId
+                                  });
+                                  if (response.data && response.data.success) {
+                                    updateLocalUser(response.data.user);
+                                    alert(`Success! Upgraded to ${p.name} Plan.`);
+                                    window.location.reload();
+                                  } else {
+                                    alert("Payment succeeded but subscription activation failed. Please contact support.");
+                                  }
                                 }
                               } catch (err) {
                                 console.error('Checkout error:', err);

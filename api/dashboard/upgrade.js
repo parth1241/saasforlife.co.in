@@ -7,7 +7,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ success: false, message: 'Method not allowed' });
   }
 
-  const { plan, billingCycle } = req.body;
+  const { plan, billingCycle, razorpayPaymentId } = req.body;
 
   if (!plan || !billingCycle) {
     return res.status(400).json({ success: false, message: 'Plan and billing cycle are required' });
@@ -21,6 +21,9 @@ export default async function handler(req, res) {
     user.plan = plan;
     user.planStatus = 'Active';
     user.planBilling = billingCycle;
+    if (razorpayPaymentId) {
+      user.razorpayPaymentId = razorpayPaymentId;
+    }
     await user.save();
 
     return res.status(200).json({
@@ -35,6 +38,7 @@ export default async function handler(req, res) {
         planBilling: user.planBilling,
         role: user.role,
         website: user.website || '',
+        razorpayPaymentId: user.razorpayPaymentId || '',
       },
     });
   } catch (error) {

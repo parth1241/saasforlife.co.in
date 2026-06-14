@@ -57,6 +57,11 @@ export default async function handler(req, res) {
         planBilling: user.planBilling,
         role: user.role,
         website: user.website || '',
+        websiteAbout: user.websiteAbout || '',
+        razorpayPaymentId: user.razorpayPaymentId || '',
+        uptimeAlerts: user.uptimeAlerts,
+        cdnCaching: user.cdnCaching,
+        weeklyBackups: user.weeklyBackups,
       },
     });
   } catch (error) {

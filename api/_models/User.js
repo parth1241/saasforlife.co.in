@@ -37,6 +37,28 @@ const UserSchema = new mongoose.Schema({
     default: '',
     trim: true,
   },
+  websiteAbout: {
+    type: String,
+    default: '',
+    trim: true,
+  },
+  razorpayPaymentId: {
+    type: String,
+    default: '',
+    trim: true,
+  },
+  uptimeAlerts: {
+    type: Boolean,
+    default: true,
+  },
+  cdnCaching: {
+    type: Boolean,
+    default: true,
+  },
+  weeklyBackups: {
+    type: Boolean,
+    default: false,
+  },
   role: {
     type: String,
     enum: ['user', 'admin'],

@@ -7,7 +7,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ success: false, message: 'Method not allowed' });
   }
 
-  const { name, websiteAbout, password } = req.body;
+  const { name, websiteAbout, password, uptimeAlerts, cdnCaching, weeklyBackups } = req.body;
 
   try {
     await connectDB();
@@ -19,6 +19,18 @@ export default async function handler(req, res) {
 
     if (websiteAbout !== undefined) {
       user.websiteAbout = websiteAbout.trim();
+    }
+
+    if (uptimeAlerts !== undefined) {
+      user.uptimeAlerts = !!uptimeAlerts;
+    }
+
+    if (cdnCaching !== undefined) {
+      user.cdnCaching = !!cdnCaching;
+    }
+
+    if (weeklyBackups !== undefined) {
+      user.weeklyBackups = !!weeklyBackups;
     }
 
     if (password) {
@@ -44,6 +56,9 @@ export default async function handler(req, res) {
         role: user.role,
         website: user.website || '',
         websiteAbout: user.websiteAbout || '',
+        uptimeAlerts: user.uptimeAlerts,
+        cdnCaching: user.cdnCaching,
+        weeklyBackups: user.weeklyBackups,
       },
     });
   } catch (error) {

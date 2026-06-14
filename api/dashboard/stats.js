@@ -133,6 +133,9 @@ export default async function handler(req, res) {
         planBilling: user.planBilling,
         website: user.website || '',
         websiteAbout: user.websiteAbout || '',
+        uptimeAlerts: user.uptimeAlerts,
+        cdnCaching: user.cdnCaching,
+        weeklyBackups: user.weeklyBackups,
       },
       stats: {
         metrics: {
