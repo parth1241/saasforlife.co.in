@@ -1,5 +1,5 @@
-import connectDB from '../utils/db.js';
-import { verifyAuth } from '../utils/auth.js';
+import connectDB from '../_utils/db.js';
+import { verifyAuth } from '../_utils/auth.js';
 
 export default async function handler(req, res) {
   // Only allow POST requests

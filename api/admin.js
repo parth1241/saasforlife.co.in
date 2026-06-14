@@ -1,9 +1,9 @@
-import connectDB from './utils/db.js';
-import User from './models/User.js';
-import Message from './models/Message.js';
-import Lead from './models/Lead.js';
-import Visit from './models/Visit.js';
-import { verifyAdmin } from './utils/auth.js';
+import connectDB from './_utils/db.js';
+import User from './_models/User.js';
+import Message from './_models/Message.js';
+import Lead from './_models/Lead.js';
+import Visit from './_models/Visit.js';
+import { verifyAdmin } from './_utils/auth.js';
 
 export default async function handler(req, res) {
   try {

@@ -1,6 +1,6 @@
-import connectDB from '../utils/db.js';
-import Lead from '../models/Lead.js';
-import User from '../models/User.js';
+import connectDB from '../_utils/db.js';
+import Lead from '../_models/Lead.js';
+import User from '../_models/User.js';
 
 export default async function handler(req, res) {
   // Allow POST requests

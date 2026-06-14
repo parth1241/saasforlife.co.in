@@ -1,5 +1,5 @@
-import connectDB from '../utils/db.js';
-import { verifyAuth } from '../utils/auth.js';
+import connectDB from '../_utils/db.js';
+import { verifyAuth } from '../_utils/auth.js';
 import bcrypt from 'bcryptjs';
 
 export default async function handler(req, res) {

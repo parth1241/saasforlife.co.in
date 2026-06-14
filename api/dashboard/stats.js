@@ -1,7 +1,7 @@
-import connectDB from '../utils/db.js';
-import User from '../models/User.js';
-import Visit from '../models/Visit.js';
-import Lead from '../models/Lead.js';
+import connectDB from '../_utils/db.js';
+import User from '../_models/User.js';
+import Visit from '../_models/Visit.js';
+import Lead from '../_models/Lead.js';
 import jwt from 'jsonwebtoken';
 
 export default async function handler(req, res) {

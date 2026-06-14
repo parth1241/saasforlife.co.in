@@ -1,5 +1,5 @@
-import connectDB from '../utils/db.js';
-import Visit from '../models/Visit.js';
+import connectDB from '../_utils/db.js';
+import Visit from '../_models/Visit.js';
 
 export default async function handler(req, res) {
   // CORS Headers
