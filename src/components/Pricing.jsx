@@ -5,10 +5,15 @@ import { useCurrency } from '../hooks/useCurrency';
 import { formatPrice } from '../utils/currency';
 import { openRazorpay } from '../utils/razorpay';
 import CurrencySwitcher from './CurrencySwitcher';
+import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 export default function Pricing() {
   const { selectedCurrency, setSelectedCurrency, convert, symbol } = useCurrency();
   const [isAnnual, setIsAnnual] = useState(false);
+  const { user, updateLocalUser } = useAuth();
+  const navigate = useNavigate();
 
   const plans = [
     {
@@ -56,7 +61,13 @@ export default function Pricing() {
     },
   ];
 
-  const handleSubscription = (plan) => {
+  const handleSubscription = async (plan) => {
+    if (!user) {
+      alert("Please log in or register to purchase a subscription plan.");
+      navigate('/login');
+      return;
+    }
+
     // Calculate total charge amount in INR (since Razorpay expects INR)
     const baseMonthlyPrice = plan.monthlyPriceINR;
     const finalMonthlyPrice = isAnnual ? baseMonthlyPrice * 0.8 : baseMonthlyPrice;
@@ -65,7 +76,34 @@ export default function Pricing() {
     const totalINR = isAnnual ? finalMonthlyPrice * 12 : finalMonthlyPrice;
     const billingCycle = isAnnual ? 'Annual' : 'Monthly';
 
-    openRazorpay(plan.name, totalINR, billingCycle);
+    try {
+      const result = await openRazorpay(plan.name, totalINR, billingCycle);
+      
+      if (result && result.success) {
+        // Call backend API to upgrade user subscription status
+        const response = await axios.post('/api/dashboard/upgrade', {
+          plan: plan.name,
+          billingCycle: billingCycle
+        });
+
+        if (response.data && response.data.success) {
+          // Update the React local auth state
+          updateLocalUser({
+            plan: plan.name,
+            planStatus: 'Active',
+            planBilling: billingCycle
+          });
+          
+          alert(`Success! Your account has been upgraded to ${plan.name} Plan.`);
+          navigate('/dashboard');
+        } else {
+          alert("Payment succeeded but subscription activation failed. Please contact customer support.");
+        }
+      }
+    } catch (error) {
+      console.error("Subscription payment error:", error);
+      alert("An error occurred during checkout. Please try again.");
+    }
   };
 
   return (
