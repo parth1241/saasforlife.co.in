@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useForm, ValidationError } from '@formspree/react';
 import { FaEnvelope, FaWhatsapp, FaMapMarkerAlt, FaClock, FaCreditCard, FaUniversity, FaGlobe } from 'react-icons/fa';
+import axios from 'axios';
 
 export default function Contact() {
   const [state, handleSubmit] = useForm(import.meta.env.VITE_FORMSPREE_ID || 'YOUR_FORMSPREE_ID');
@@ -35,7 +36,7 @@ export default function Contact() {
     return newErrors;
   };
 
-  const onSubmitHandler = (e) => {
+  const onSubmitHandler = async (e) => {
     e.preventDefault();
     setTriedSubmit(true);
     const validationErrors = validate();
@@ -49,6 +50,21 @@ export default function Contact() {
       }
       return;
     }
+
+    try {
+      await axios.post('/api/support/leads', {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        company: formData.company,
+        plan: formData.plan,
+        message: formData.message,
+        domain: 'saasforlife.co.in'
+      });
+    } catch (err) {
+      console.error('Failed to save lead to DB:', err);
+    }
+
     handleSubmit(e);
   };
 

@@ -1,5 +1,7 @@
 import connectDB from '../utils/db.js';
 import User from '../models/User.js';
+import Visit from '../models/Visit.js';
+import Lead from '../models/Lead.js';
 import jwt from 'jsonwebtoken';
 
 export default async function handler(req, res) {
@@ -17,85 +19,108 @@ export default async function handler(req, res) {
   const token = authHeader.split(' ')[1];
 
   try {
+    await connectDB();
+
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     if (!decoded || !decoded.id) {
       return res.status(401).json({ success: false, message: 'Not authorized, invalid token' });
     }
 
-    await connectDB();
     const user = await User.findById(decoded.id).select('-password');
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    // Generate custom stats based on plan level
     const plan = user.plan || 'None';
     const isPaid = user.planStatus === 'Active';
+    const hasWebsite = !!user.website;
 
-    let totalVisits = 1205;
-    let activeUsers = 3;
-    let bounceRate = 54.8;
-    let conversionRate = 1.2;
-    let pageLoadSpeed = 2.4;
-    let chartData = [
-      { day: 'Mon', visits: 120 },
-      { day: 'Tue', visits: 150 },
-      { day: 'Wed', visits: 130 },
-      { day: 'Thu', visits: 180 },
-      { day: 'Fri', visits: 210 },
-      { day: 'Sat', visits: 190 },
-      { day: 'Sun', visits: 225 }
-    ];
+    // Initialize metrics
+    let totalVisits = 0;
+    let activeUsers = 0;
+    let bounceRateNum = 0;
+    let conversionRateNum = 0;
+    let pageLoadSpeedNum = 0.0;
+    let chartData = [];
 
-    if (isPaid) {
-      if (plan === 'Starter') {
-        totalVisits = 14285;
-        activeUsers = 18;
-        bounceRate = 42.1;
-        conversionRate = 2.4;
-        pageLoadSpeed = 1.1;
-        chartData = [
-          { day: 'Mon', visits: 1800 },
-          { day: 'Tue', visits: 2100 },
-          { day: 'Wed', visits: 1950 },
-          { day: 'Thu', visits: 2300 },
-          { day: 'Fri', visits: 2100 },
-          { day: 'Sat', visits: 1850 },
-          { day: 'Sun', visits: 2185 }
-        ];
-      } else if (plan === 'Growth') {
-        totalVisits = 68412;
-        activeUsers = 84;
-        bounceRate = 34.6;
-        conversionRate = 4.1;
-        pageLoadSpeed = 0.7;
-        chartData = [
-          { day: 'Mon', visits: 8200 },
-          { day: 'Tue', visits: 9500 },
-          { day: 'Wed', visits: 9100 },
-          { day: 'Thu', visits: 10400 },
-          { day: 'Fri', visits: 11200 },
-          { day: 'Sat', visits: 9800 },
-          { day: 'Sun', visits: 10212 }
-        ];
-      } else if (plan === 'Scale') {
-        totalVisits = 248190;
-        activeUsers = 312;
-        bounceRate = 28.2;
-        conversionRate = 5.8;
-        pageLoadSpeed = 0.35;
-        chartData = [
-          { day: 'Mon', visits: 31000 },
-          { day: 'Tue', visits: 34500 },
-          { day: 'Wed', visits: 33800 },
-          { day: 'Thu', visits: 37200 },
-          { day: 'Fri', visits: 39500 },
-          { day: 'Sat', visits: 35100 },
-          { day: 'Sun', visits: 37090 }
-        ];
+    // Weekdays lookup list
+    const weekdayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    if (hasWebsite) {
+      const targetDomain = user.website.toLowerCase();
+
+      // Retrieve visits from the last 7 days
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+      const visits = await Visit.find({
+        domain: targetDomain,
+        createdAt: { $gte: sevenDaysAgo }
+      });
+
+      totalVisits = visits.length;
+
+      // Active users (unique visits within the last 10 minutes)
+      const tenMinutesAgo = new Date();
+      tenMinutesAgo.setMinutes(tenMinutesAgo.getMinutes() - 10);
+      const activeVisits = visits.filter(v => new Date(v.createdAt) >= tenMinutesAgo);
+      // Simulate real active sessions based on page views (min 1 if there's any active load, max matching count)
+      activeUsers = activeVisits.length;
+
+      // Average Page load speed
+      if (totalVisits > 0) {
+        const totalLoadTime = visits.reduce((sum, v) => sum + (v.loadTime || 0.5), 0);
+        pageLoadSpeedNum = Number((totalLoadTime / totalVisits).toFixed(2));
+      }
+
+      // Conversion rate (percentage of visits where converted === true)
+      if (totalVisits > 0) {
+        const totalConversions = visits.filter(v => v.converted).length;
+        conversionRateNum = Number(((totalConversions / totalVisits) * 100).toFixed(1));
+      }
+
+      // Bounce rate simulation: inversely proportional to page speed, between 25% and 65%
+      if (totalVisits > 0) {
+        bounceRateNum = Math.min(Math.max(Math.round(25 + pageLoadSpeedNum * 15), 25), 68);
+      }
+
+      // Construct Visitor History Chart Data dynamically for the past 7 days chronologically
+      const now = new Date();
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(now.getDate() - i);
+        const dayName = weekdayNames[d.getDay()];
+
+        const visitsOnDay = visits.filter(v => {
+          const vDate = new Date(v.createdAt);
+          return vDate.getFullYear() === d.getFullYear() &&
+                 vDate.getMonth() === d.getMonth() &&
+                 vDate.getDate() === d.getDate();
+        });
+
+        chartData.push({
+          day: dayName,
+          visits: visitsOnDay.length
+        });
+      }
+    } else {
+      // Default empty chart data if no website is bound
+      const now = new Date();
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(now.getDate() - i);
+        chartData.push({
+          day: weekdayNames[d.getDay()],
+          visits: 0
+        });
       }
     }
+
+    // Fetch leads captured for this user
+    const leads = await Lead.find({ user: user._id })
+      .select('-user')
+      .sort({ createdAt: -1 });
 
     return res.status(200).json({
       success: true,
@@ -105,24 +130,27 @@ export default async function handler(req, res) {
         email: user.email,
         plan: user.plan,
         planStatus: user.planStatus,
-        planBilling: user.planBilling
+        planBilling: user.planBilling,
+        website: user.website || '',
+        websiteAbout: user.websiteAbout || '',
       },
       stats: {
         metrics: {
           totalVisits,
           activeUsers,
-          bounceRate: `${bounceRate}%`,
-          conversionRate: `${conversionRate}%`,
-          pageLoadSpeed: `${pageLoadSpeed}s`
+          bounceRate: `${bounceRateNum}%`,
+          conversionRate: `${conversionRateNum}%`,
+          pageLoadSpeed: `${pageLoadSpeedNum}s`
         },
         chartData,
         services: {
-          ssl: isPaid ? 'Active' : 'Not Configured',
-          uptimeAlerts: isPaid ? 'Active' : 'Disabled',
-          customDomain: ['Growth', 'Scale'].includes(plan) && isPaid ? 'Active' : 'Not Supported',
-          apiAccess: plan === 'Scale' && isPaid ? 'Active' : 'Not Supported',
-          whiteLabel: plan === 'Scale' && isPaid ? 'Active' : 'Not Supported'
-        }
+          ssl: isPaid && hasWebsite ? 'Active' : 'Not Configured',
+          uptimeAlerts: isPaid && hasWebsite ? 'Active' : 'Disabled',
+          customDomain: ['Growth', 'Scale'].includes(plan) && isPaid && hasWebsite ? 'Active' : 'Not Supported',
+          apiAccess: plan === 'Scale' && isPaid && hasWebsite ? 'Active' : 'Not Supported',
+          whiteLabel: plan === 'Scale' && isPaid && hasWebsite ? 'Active' : 'Not Supported'
+        },
+        leads
       }
     });
 
@@ -131,6 +159,6 @@ export default async function handler(req, res) {
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({ success: false, message: 'Not authorized, invalid token' });
     }
-    return res.status(500).json({ success: false, message: 'Internal server error' });
+    return res.status(500).json({ success: false, message: 'Internal server error', error: error.message });
   }
 }
