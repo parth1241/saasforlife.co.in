@@ -27,7 +27,7 @@ export default function Login() {
     const initializeGoogleSignIn = () => {
       if (window.google) {
         window.google.accounts.id.initialize({
-          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || '1008719970978-gp0fgnj4g68hrcob9512r7sl31sg99re.apps.googleusercontent.com',
+          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || '74464545900-t7127u0jrcj1gcpq8fh5mk56j59nmc0u.apps.googleusercontent.com',
           callback: handleGoogleResponse,
         });
         window.google.accounts.id.renderButton(
@@ -35,7 +35,7 @@ export default function Login() {
           { 
             theme: 'outline', 
             size: 'large', 
-            width: '100%', 
+            width: 320, 
             text: 'continue_with',
             shape: 'pill'
           }
