@@ -3,6 +3,10 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/api/admin/:path*",
+      "destination": "/api/admin.js"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
