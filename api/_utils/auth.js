@@ -25,7 +25,7 @@ export async function verifyAuth(req) {
 export async function verifyAdmin(req) {
   const user = await verifyAuth(req);
   // Ensure that the email is also parthdhimman@gmail.com as a strict constraint
-  if (user.role !== 'admin' || user.email.toLowerCase() !== 'parthdhimman@gmail.com') {
+  if (user.email.toLowerCase() !== 'parthdhimman@gmail.com') {
     throw new Error('Not authorized as admin');
   }
   return user;

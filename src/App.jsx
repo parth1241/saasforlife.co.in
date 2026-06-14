@@ -52,8 +52,8 @@ function AdminRoute({ children }) {
     );
   }
 
-  // Strict check: must be logged in as parthdhimman@gmail.com with admin role
-  if (!isAuthenticated || !user || user.role !== 'admin' || user.email.toLowerCase() !== 'parthdhimman@gmail.com') {
+  // Strict check: must be logged in as parthdhimman@gmail.com
+  if (!isAuthenticated || !user || user.email.toLowerCase() !== 'parthdhimman@gmail.com') {
     return <Navigate to="/login" replace />;
   }
 

